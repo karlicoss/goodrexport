@@ -5,4 +5,5 @@ cd "$(dirname "$0")"
 BPATH="/L/backups/goodreads"
 DATE="$(date -u '+%Y%m%d%H%M%S')"
 
-./backup.py > "$BPATH/goodreads-$DATE.xmll"
+res=$(./backup.py) 
+echo "$res" > "$BPATH/goodreads-$DATE.xmll"

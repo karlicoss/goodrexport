@@ -14,7 +14,6 @@ from xml.dom.minidom import parse # type: ignore
 # review.show_by_user_and_book   —   Get a user's review for a given book.
 # shelves.list   —   Get a user's shelves.
 # user.show   —   Get info about a member by id or username.
-# user.compare   —   Compare books with another member.
 # user.followers   —   Get a user's followers.
 # user.following   —   Get people a user is following.
 # user.friends   —   Get a user's friends.
@@ -22,7 +21,7 @@ from xml.dom.minidom import parse # type: ignore
 class Exporter:
     def __init__(self, *args, **kwargs) -> None:
         self.base_url = 'https://www.goodreads.com/'
-        self.user = kwargs['user']
+        self.user_id = kwargs['user_id']
         self.key = kwargs['key']
         self.per_page = 100 # TODO FIXME 200
 
@@ -43,34 +42,51 @@ class Exporter:
             total = int(curr.getAttribute('total'))
             results.extend(curr.getElementsByTagName('review'))
             current_page += 1
-            # TODO user id??
         return results
 
 
-    def export_xmll(self):
-        for endpoint in ['review/list']:
-            reviews = self._get(endpoint, id=self.user)
-            for r in reviews:
-                print(r.toxml())
+    def export_xml(self):
+        nodes = []
+        for node_name, endpoint in [
+                ## TODO looks like friends require oauth..
+                # 'friend/user/' + self.user,
+                # https://gist.github.com/gpiancastelli/537923
+                ##
+
+                ## TODO shelves are a mess too...
+                # 'shelf/list',
+                # <shelves end="3" start="1" total="3"> <user_shelf>
+
+                ('reviews', 'review/list'),
+        ]:
+            results = self._get(endpoint, id=self.user_id)
+            nodes.append('''
+<{name}>
+{body}
+</{name}>
+'''.format(name=node_name, body='\n'.join(x.toprettyxml() for x in results)))
+        return '''
+<export>
+{}
+</export>'''.format('\n'.join(nodes))
 
 
-def get_xmll(**params):
-    return Exporter(**params).export_xmll()
+def get_xml(**params):
+    return Exporter(**params).export_xml()
 
 
 def main():
     from export_helper import setup_parser
     import argparse
     parser = argparse.ArgumentParser('Export/takeout for your personal Goodreads data')
-    setup_parser(parser=parser, params=['user', 'key'])
+    setup_parser(parser=parser, params=['user_id', 'key'])
     args = parser.parse_args()
 
     params = args.params
     dumper = args.dumper
 
-    x = get_xmll(**params)
-    # dumper()
-    return
+    x = get_xml(**params)
+    dumper(x)
 
 
 if __name__ == '__main__':

@@ -1,0 +1,10 @@
+* backup-goodreads
+
+[Getting API keys](https://www.goodreads.com/api/keys)
+
+
+* Using
+  
+#+begin_src shell :results drawer
+./export.py --help
+#+end_src

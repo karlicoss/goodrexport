@@ -1,2 +1,0 @@
-#!/bin/bash -eu
-exec "$(dirname "$0")/goodrexport.py" "$@"

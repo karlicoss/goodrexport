@@ -1,10 +1,31 @@
-* backup-goodreads
-
-[Getting API keys](https://www.goodreads.com/api/keys)
-
+First, [[https://www.goodreads.com/api/keys][get your API keys]].
 
 * Using
-  
-#+begin_src shell :results drawer
-./export.py --help
+
+# TODO need to include DAL doc as well
+
+#+begin_src python :results drawer :exports results 
+import export; return export.make_parser().epilog
 #+end_src
+
+#+RESULTS:
+:results:
+
+Usage:
+
+*Recommended*: create =secrets.py= keeping your api parameters, e.g.:
+
+    
+:    user_id = "USER_ID"
+:    key = "KEY"
+
+
+After that, use: ~./export.py --secrets /path/to/secrets.py~
+That way you type less and have control over where you keep your plaintext tokens/passwords.
+
+*Alternatively*, you can pass parameters directly, e.g. ~./export.py --user_id <user_id> --key <key>~.
+However, this is verbose and prone to leaking your keys in shell history.
+    
+You can also import ~export.py~ this as a module and call ~get_xml~ function directly to get raw XML.
+        
+:end:

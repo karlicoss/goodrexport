@@ -76,6 +76,17 @@ def get_xml(**params):
 
 
 def main():
+    parser = make_parser()
+    args = parser.parse_args()
+
+    params = args.params
+    dumper = args.dumper
+
+    x = get_xml(**params)
+    dumper(x)
+
+
+def make_parser():
     from export_helper import setup_parser
     import argparse
     parser = argparse.ArgumentParser(
@@ -87,16 +98,10 @@ def main():
         params=['user_id', 'key'],
         # TODO not sure if worth automating?
         extra_usage='''
-You can also import this as a module and call ~get_xml~ function directly to get raw XML.
+You can also import ~export.py~ this as a module and call ~get_xml~ function directly to get raw XML.
         ''',
     )
-    args = parser.parse_args()
-
-    params = args.params
-    dumper = args.dumper
-
-    x = get_xml(**params)
-    dumper(x)
+    return parser
 
 
 if __name__ == '__main__':

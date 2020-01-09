@@ -67,10 +67,11 @@ def setup_parser(parser: argparse.ArgumentParser, *, params: Sequence[str], extr
     paramss = ' '.join(f'--{p} <{p}>' for p in params)
     # TODO extract export programmatically?
 
-    secrets_example = '\n    '.join(f'{p} = "{p.upper()}"' for p in params)
+    sep = '\n:    '
+    secrets_example = sep + sep.join(f'{p} = "{p.upper()}"' for p in params)
 
     parser.epilog = f'''
-Using:
+Usage:
 
 *Recommended*: create =secrets.py= keeping your api parameters, e.g.:
 
@@ -80,7 +81,7 @@ Using:
 After that, use: ~./export.py --secrets /path/to/secrets.py~
 That way you type less and have control over where you keep your plaintext tokens/passwords.
 
-*Alternatively*, you can pass parameters directly, e.g. ~./export {paramss}~.
+*Alternatively*, you can pass parameters directly, e.g. ~./export.py {paramss}~.
 However, this is verbose and prone to leaking your keys in shell history.
     '''
 

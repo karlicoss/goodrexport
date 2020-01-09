@@ -1,8 +1,6 @@
 First, [[https://www.goodreads.com/api/keys][get your API keys]].
 
-* Using
-
-# TODO need to include DAL doc as well
+* Exporting
 
 #+begin_src python :results drawer :exports results 
 import export; return export.make_parser().epilog
@@ -29,3 +27,25 @@ However, this is verbose and prone to leaking your keys in shell history.
 You can also import ~export.py~ this as a module and call ~get_xml~ function directly to get raw XML.
         
 :end:
+
+* Using data
+  
+#+begin_src python :results drawer :exports results 
+import dal_helper; return dal_helper.make_parser().epilog
+#+end_src
+
+#+RESULTS:
+:results:
+
+You can use =dal.py= (stands for "Data Access/Abstraction Layer") to access your exported data, even offline.
+
+- main usecase is to be imported as python module to allow for programmatic access to your data.
+
+  You can find some inspiration in [[https://github.com/karlicoss/my][=my.=]] package that I'm using as an API to all my personal data.
+
+- to test it against your export, simply run: ~./dal.py --source /path/to/export~
+
+- you can also try it interactively: ~./dal.py --source /path/to/export --interactive~
+
+:end:
+

@@ -5,6 +5,9 @@ from datetime import datetime
 
 from lxml import etree as ET # type: ignore
 
+import dal_helper
+
+
 class Book(NamedTuple):
     id: str
     title: str
@@ -14,11 +17,13 @@ class Book(NamedTuple):
     date_started: Optional[datetime]
     date_read: Optional[datetime]
 
+
 class Review(NamedTuple):
     id: str
     book: Book
 
 
+# TODO dal_helper?
 def the(l):
     it = iter(l)
     try:
@@ -80,7 +85,8 @@ def _parse_review(r):
         book=book,
     )
 
-class Model:
+
+class DAL:
     def __init__(self, sources: Sequence[Union[Path, str]]) -> None:
         self.sources = list(map(Path, sources))
 
@@ -95,6 +101,14 @@ class Model:
         return list(self.iter_reviews())
 
 
+def demo(dal: DAL) -> None:
+    print("Your books:")
+
+    import pytz # type: ignore
+    reviews = list(sorted(dal.reviews(), key=lambda r: r.book.date_read or pytz.utc.localize(datetime.min)))
+    for r in reviews:
+        print(r.book.date_read, r.book.title)
+
+
 if __name__ == '__main__':
-    reviews = Model(['export.xml']).reviews()
-    print(reviews)
+    dal_helper.main(DAL=DAL, demo=demo)

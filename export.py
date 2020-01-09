@@ -78,8 +78,18 @@ def get_xml(**params):
 def main():
     from export_helper import setup_parser
     import argparse
-    parser = argparse.ArgumentParser('Export/takeout for your personal Goodreads data')
-    setup_parser(parser=parser, params=['user_id', 'key'])
+    parser = argparse.ArgumentParser(
+        'Export/takeout for your personal Goodreads data',
+        formatter_class=argparse.RawTextHelpFormatter, # TODO move this to export_helper?
+    )
+    setup_parser(
+        parser,
+        params=['user_id', 'key'],
+        # TODO not sure if worth automating?
+        extra_usage='''
+You can also import this as a module and call ~get_xml~ function directly to get raw XML.
+        ''',
+    )
     args = parser.parse_args()
 
     params = args.params

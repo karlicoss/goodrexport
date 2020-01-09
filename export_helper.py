@@ -1,13 +1,13 @@
 import argparse
 from pathlib import Path
 import sys
-from typing import Sequence, Dict, Any
+from typing import Sequence, Dict, Any, Optional
 
 
 Json = Dict[str, Any]
 
 
-def setup_parser(parser: argparse.ArgumentParser, params: Sequence[str]):
+def setup_parser(parser: argparse.ArgumentParser, *, params: Sequence[str], extra_usage: Optional[str]=None):
     PARAMS_KEY = 'params'
 
     # eh, doesn't seem to be possible to achieve this via mutually exclusive groups in argparse...
@@ -64,12 +64,36 @@ def setup_parser(parser: argparse.ArgumentParser, params: Sequence[str]):
 
             setattr(namespace, 'dumper', dumper)
 
+    paramss = ' '.join(f'--{p} <{p}>' for p in params)
+    # TODO extract export programmatically?
+
+    secrets_example = '\n    '.join(f'{p} = "{p.upper()}"' for p in params)
+
+    parser.epilog = f'''
+Using:
+
+*Recommended*: create =secrets.py= keeping your api parameters, e.g.:
+
+    {secrets_example}
+
+
+After that, use: ~./export.py --secrets /path/to/secrets.py~
+That way you type less and have control over where you keep your plaintext tokens/passwords.
+
+*Alternatively*, you can pass parameters directly, e.g. ~./export {paramss}~.
+However, this is verbose and prone to leaking your keys in shell history.
+    '''
+
+    if extra_usage is not None:
+        parser.epilog += extra_usage
+
     parser.add_argument(
         '--secrets',
+        metavar='SECRETS_FILE',
         type=Path,
         action=SetParamsFromFile,
         required=False,
-        help='.py file containing {} variables'.format(", ".join(params)),
+        help='.py file containing API parameters',
     )
     gr = parser.add_argument_group('API parameters')
     for param in params:
@@ -80,5 +104,5 @@ def setup_parser(parser: argparse.ArgumentParser, params: Sequence[str]):
         type=Path,
         action=SetOutput,
         nargs='?',
-        help='Optional path to backup, otherwise will be printed to stdout',
+        help='Optional path where exported data will be dumped, otherwise printed to stdout',
     )

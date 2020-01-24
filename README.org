@@ -1,4 +1,16 @@
-First, [[https://www.goodreads.com/api/keys][get your API keys]].
+#+begin_src python :results drawer :exports results
+import export
+return export.make_parser().prog
+#+end_src
+
+#+RESULTS:
+:results:
+Export/takeout for your personal Goodreads data
+:end:
+
+* Setting up
+1. =pip3 install --user -r requirements.txt=
+2. [[https://www.goodreads.com/api/keys][get your API keys]]
 
 * Exporting
 
@@ -13,19 +25,29 @@ Usage:
 
 *Recommended*: create =secrets.py= keeping your api parameters, e.g.:
 
+
+: user_id = "USER_ID"
+: key = "KEY"
+
+
+After that, use:
+
+: ./export.py --secrets /path/to/secrets.py
+
+That way you type less and have control over where you keep your plaintext secrets.
+
+*Alternatively*, you can pass parameters directly, e.g.
+
+: ./export.py --user_id <user_id> --key <key>
+
+However, this is verbose and prone to leaking your keys/tokens/passwords in shell history.
+
     
-:    user_id = "USER_ID"
-:    key = "KEY"
-
-
-After that, use: ~./export.py --secrets /path/to/secrets.py~
-That way you type less and have control over where you keep your plaintext tokens/passwords.
-
-*Alternatively*, you can pass parameters directly, e.g. ~./export.py --user_id <user_id> --key <key>~.
-However, this is verbose and prone to leaking your keys in shell history.
-    
-You can also import ~export.py~ this as a module and call ~get_xml~ function directly to get raw XML.
+You can also import ~export.py~ as a module and call ~get_xml~ function directly to get raw XML.
         
+
+I *highly* recommend checking exported files at least once just to make sure they contain everything you expect from your export. If not, please feel free to ask or raise an issue!
+    
 :end:
 
 * Using data
@@ -38,10 +60,11 @@ import dal_helper; return dal_helper.make_parser().epilog
 :results:
 
 You can use =dal.py= (stands for "Data Access/Abstraction Layer") to access your exported data, even offline.
+I elaborate on motivation behind it [[https://beepb00p.xyz/exports.html#dal][here]].
 
-- main usecase is to be imported as python module to allow for programmatic access to your data.
+- main usecase is to be imported as python module to allow for *programmatic access* to your data.
 
-  You can find some inspiration in [[https://github.com/karlicoss/my][=my.=]] package that I'm using as an API to all my personal data.
+  You can find some inspiration in [[https://beepb00p.xyz/mypkg.html][=my.=]] package that I'm using as an API to all my personal data.
 
 - to test it against your export, simply run: ~./dal.py --source /path/to/export~
 

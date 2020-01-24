@@ -5,7 +5,14 @@ from datetime import datetime
 
 from lxml import etree as ET # type: ignore
 
-import dal_helper
+
+if __name__ == '__main__':
+    # see dal_helper.setup for the explanation
+    import dal_helper # type: ignore[import]
+    dal_helper.fix_imports(globals())
+
+from . import dal_helper  # type: ignore[no-redef]
+from .dal_helper import the
 
 
 class Book(NamedTuple):
@@ -21,17 +28,6 @@ class Book(NamedTuple):
 class Review(NamedTuple):
     id: str
     book: Book
-
-
-# TODO dal_helper?
-def the(l):
-    it = iter(l)
-    try:
-        first = next(it)
-    except StopIteration as ee:
-        raise RuntimeError('Empty iterator?')
-    assert all(e == first for e in it)
-    return first
 
 
 def _parse_date(s: Optional[str]) -> Optional[datetime]:

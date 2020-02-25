@@ -53,7 +53,7 @@ def _parse_review(r):
     started_at     = None if len(sss) == 0 else the(sss)
     read_at        = None if len(rrr) == 0 else the(rrr)
 
-    shelves = r.xpath('shelves/shelf/name/text()')
+    shelves = [s.attrib['name'] for s in r.xpath('shelves/shelf')]
 
     # if isbn_element.getAttribute('nil') != 'true':
     #     book['isbn'] = isbn_element.firstChild.data

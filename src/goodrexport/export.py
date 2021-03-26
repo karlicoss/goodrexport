@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
+import argparse
 from urllib.parse import urlencode
 from urllib.request import urlopen
+from textwrap import dedent
 from xml.dom.minidom import parse # type: ignore
 
 
@@ -23,7 +25,7 @@ class Exporter:
         self.base_url = 'https://www.goodreads.com/'
         self.user_id = kwargs['user_id']
         self.key = kwargs['key']
-        self.per_page = 100 # TODO FIXME 200
+        self.per_page = 200
 
     # apparently no json... https://www.goodreads.com/topic/show/1663342-json-endpoints
     def _get(self, endpoint: str, **kwargs):
@@ -60,22 +62,39 @@ class Exporter:
                 ('reviews', 'review/list'),
         ]:
             results = self._get(endpoint, id=self.user_id)
-            nodes.append('''
-<{name}>
-{body}
-</{name}>
-'''.format(name=node_name, body='\n'.join(x.toprettyxml() for x in results)))
-        return '''
-<export>
-{}
-</export>'''.format('\n'.join(nodes))
+            body=''.join(x.toprettyxml() for x in results)
+            # eh, not sure why toprettyxml adds so many newlines.. whatever
+            nodes.append(dedent(f'''
+            <{node_name}>
+            {body}
+            </{node_name}>
+            '''))
+            nodess = ''.join(nodes)
+        return dedent(f'''
+               <export>
+               {nodess}
+               </export>''')
 
 
 def get_xml(**params):
     return Exporter(**params).export_xml()
 
 
-def main():
+def make_parser() -> argparse.ArgumentParser:
+    from .exporthelpers.export_helper import setup_parser, Parser
+    parser = Parser('Export/takeout for your personal Goodreads data')
+    setup_parser(
+        parser,
+        params=['user_id', 'key'],
+        # TODO not sure if worth automating?
+        extra_usage='''
+You can also import ~goodrexport.export~ as a module and call ~get_xml~ function directly to get raw XML.
+        ''',
+    )
+    return parser
+
+
+def main() -> None:
     parser = make_parser()
     args = parser.parse_args()
 
@@ -84,20 +103,6 @@ def main():
 
     x = get_xml(**params)
     dumper(x)
-
-
-def make_parser():
-    from export_helper import setup_parser, Parser
-    parser = Parser('Export/takeout for your personal Goodreads data: ')
-    setup_parser(
-        parser,
-        params=['user_id', 'key'],
-        # TODO not sure if worth automating?
-        extra_usage='''
-You can also import ~export.py~ as a module and call ~get_xml~ function directly to get raw XML.
-        ''',
-    )
-    return parser
 
 
 if __name__ == '__main__':

@@ -1,0 +1,3 @@
+[submodule "src/goodrexport/exporthelpers"]
+	path = src/goodrexport/exporthelpers
+	url = https://github.com/karlicoss/exporthelpers.git

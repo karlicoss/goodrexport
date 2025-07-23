@@ -1,10 +1,12 @@
-#!/usr/bin/env python3
+from __future__ import annotations
+
 import argparse
+from textwrap import dedent
 from urllib.parse import urlencode
 from urllib.request import urlopen
-from textwrap import dedent
-from xml.dom.minidom import parse # type: ignore
+from xml.dom.minidom import parse
 
+from .exporthelpers.export_helper import Parser, setup_parser
 
 # https://www.goodreads.com/api
 # TODO maybe add these too?
@@ -20,8 +22,9 @@ from xml.dom.minidom import parse # type: ignore
 # user.following   —   Get people a user is following.
 # user.friends   —   Get a user's friends.
 
+
 class Exporter:
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args, **kwargs) -> None:  # noqa: ARG002
         self.base_url = 'https://www.goodreads.com/'
         self.user_id = kwargs['user_id']
         self.key = kwargs['key']
@@ -32,11 +35,17 @@ class Exporter:
         current_page = 1
         total = None
 
-        results = [] # type: ignore
+        results = []  # type: ignore[var-annotated]
         while total is None or len(results) < total:
-            query = urlencode([ # type: ignore
-                ('v', '2'), ('key', self.key), ('per_page', self.per_page), ('page', current_page), *kwargs.items(),
-            ])
+            query = urlencode(
+                [
+                    ('v', '2'),
+                    ('key', self.key),
+                    ('per_page', self.per_page),
+                    ('page', current_page),
+                    *kwargs.items(),
+                ]
+            )
             url = self.base_url + endpoint + '.xml?' + query
             chunk = parse(urlopen(url))
 
@@ -46,30 +55,29 @@ class Exporter:
             current_page += 1
         return results
 
-
-    def export_xml(self):
+    def export_xml(self) -> str:
         nodes = []
         for node_name, endpoint in [
-                ## TODO looks like friends require oauth..
-                # 'friend/user/' + self.user,
-                # https://gist.github.com/gpiancastelli/537923
-                ##
-
-                ## TODO shelves are a mess too...
-                # 'shelf/list',
-                # <shelves end="3" start="1" total="3"> <user_shelf>
-
-                ('reviews', 'review/list'),
+            ## TODO looks like friends require oauth..
+            # 'friend/user/' + self.user,
+            # https://gist.github.com/gpiancastelli/537923
+            ##
+            ## TODO shelves are a mess too...
+            # 'shelf/list',
+            # <shelves end="3" start="1" total="3"> <user_shelf>
+            ('reviews', 'review/list'),
         ]:
             results = self._get(endpoint, id=self.user_id)
-            body=''.join(x.toprettyxml() for x in results)
+            body = ''.join(x.toprettyxml() for x in results)
             # eh, not sure why toprettyxml adds so many newlines.. whatever
-            nodes.append(dedent(f'''
+            nodes.append(
+                dedent(f'''
             <{node_name}>
             {body}
             </{node_name}>
-            '''))
-            nodess = ''.join(nodes)
+            ''')
+            )
+        nodess = ''.join(nodes)
         return dedent(f'''
                <export>
                {nodess}
@@ -81,7 +89,6 @@ def get_xml(**params):
 
 
 def make_parser() -> argparse.ArgumentParser:
-    from .exporthelpers.export_helper import setup_parser, Parser
     parser = Parser('Export/takeout for your personal Goodreads data')
     setup_parser(
         parser,

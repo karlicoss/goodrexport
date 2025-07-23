@@ -1,11 +1,13 @@
-#!/usr/bin/env python3
-from pathlib import Path
-from typing import List, Dict, NamedTuple, Iterator, Optional, Sequence
+from __future__ import annotations
+
+from collections.abc import Iterator, Sequence
 from datetime import datetime, timezone
+from typing import NamedTuple, Optional
 
-from lxml import etree as ET # type: ignore
+from lxml import etree as ET
 
-from .exporthelpers.dal_helper import the, datetime_aware, PathIsh
+from .exporthelpers import dal_helper
+from .exporthelpers.dal_helper import PathIsh, datetime_aware, pathify, the
 
 
 class Book(NamedTuple):
@@ -32,19 +34,19 @@ def _parse_date(s: Optional[str]) -> Optional[datetime_aware]:
 
 
 def _parse_review(r) -> Review:
-    rid   = the(r.xpath('id'))
-    be    = the(r.xpath('book'))
+    rid = the(r.xpath('id'))
+    be = the(r.xpath('book'))
     title = the(be.xpath('title/text()'))
     authors = be.xpath('authors/author/name/text()')
 
-    bid     = the(r.xpath('id/text()'))
+    bid = the(r.xpath('id/text()'))
     # isbn_element   = the(book_element.getElementsByTagName('isbn'))
     # isbn13_element = the(book_element.getElementsByTagName('isbn13'))
-    date_added     = the(r.xpath('date_added/text()'))
+    date_added = the(r.xpath('date_added/text()'))
     sss = r.xpath('started_at/text()')
     rrr = r.xpath('read_at/text()')
-    started_at     = None if len(sss) == 0 else the(sss)
-    read_at        = None if len(rrr) == 0 else the(rrr)
+    started_at = None if len(sss) == 0 else the(sss)
+    read_at = None if len(rrr) == 0 else the(rrr)
 
     shelves = [s.attrib['name'] for s in r.xpath('shelves/shelf')]
 
@@ -77,14 +79,14 @@ def _parse_review(r) -> Review:
 
 class DAL:
     def __init__(self, sources: Sequence[PathIsh]) -> None:
-        self.sources = [p if isinstance(p, Path) else Path(p) for p in sources]
+        self.sources = list(map(pathify, sources))
         # TODO take all sources into the account?
         self._source = max(self.sources)
 
     def reviews(self) -> Iterator[Review]:
         tree = ET.fromstring(self._source.read_text())
         rxml = tree.xpath('//review')
-        for r in rxml:
+        for r in rxml:  # type: ignore[union-attr]
             yield _parse_review(r)
 
 
@@ -92,13 +94,12 @@ def demo(dal: DAL) -> None:
     print("Your books:")
 
     mindt = datetime.min.replace(tzinfo=timezone.utc)
-    reviews = list(sorted(dal.reviews(), key=lambda r: r.book.date_read or mindt))
+    reviews = sorted(dal.reviews(), key=lambda r: r.book.date_read or mindt)
     for r in reviews:
         print(r.book.date_read, r.book.title)
 
 
 def main() -> None:
-    from .exporthelpers import dal_helper
     dal_helper.main(DAL=DAL, demo=demo)
 
 

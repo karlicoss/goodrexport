@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from datetime import datetime, timezone
-from typing import NamedTuple, Optional
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import NamedTuple
 
 from lxml import etree as ET
 
 from .exporthelpers import dal_helper
-from .exporthelpers.dal_helper import PathIsh, datetime_aware, pathify, the
+from .exporthelpers.dal_helper import datetime_aware, pathify, the
 
 
 class Book(NamedTuple):
@@ -16,8 +17,8 @@ class Book(NamedTuple):
     authors: Sequence[str]
     shelves: Sequence[str]
     date_added: datetime_aware
-    date_started: Optional[datetime_aware]
-    date_read: Optional[datetime_aware]
+    date_started: datetime_aware | None
+    date_read: datetime_aware | None
 
 
 class Review(NamedTuple):
@@ -25,7 +26,7 @@ class Review(NamedTuple):
     book: Book
 
 
-def _parse_date(s: Optional[str]) -> Optional[datetime_aware]:
+def _parse_date(s: str | None) -> datetime_aware | None:
     if s is None:
         return None
     res = datetime.strptime(s, "%a %b %d %H:%M:%S %z %Y")
@@ -78,7 +79,7 @@ def _parse_review(r) -> Review:
 
 
 class DAL:
-    def __init__(self, sources: Sequence[PathIsh]) -> None:
+    def __init__(self, sources: Sequence[Path | str]) -> None:
         self.sources = list(map(pathify, sources))
         # TODO take all sources into the account?
         self._source = max(self.sources)
@@ -86,14 +87,15 @@ class DAL:
     def reviews(self) -> Iterator[Review]:
         tree = ET.fromstring(self._source.read_text())
         rxml = tree.xpath('//review')
-        for r in rxml:  # type: ignore[union-attr]
+        assert isinstance(rxml, list), rxml
+        for r in rxml:
             yield _parse_review(r)
 
 
 def demo(dal: DAL) -> None:
     print("Your books:")
 
-    mindt = datetime.min.replace(tzinfo=timezone.utc)
+    mindt = datetime.min.replace(tzinfo=UTC)
     reviews = sorted(dal.reviews(), key=lambda r: r.book.date_read or mindt)
     for r in reviews:
         print(r.book.date_read, r.book.title)

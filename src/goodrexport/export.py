@@ -4,9 +4,9 @@ import argparse
 from textwrap import dedent
 from urllib.parse import urlencode
 from urllib.request import urlopen
-from xml.dom.minidom import parse
+from xml.dom.minidom import Element, parse
 
-from .exporthelpers.export_helper import Parser, setup_parser
+import hpikit.cli.export as cli
 
 # https://www.goodreads.com/api
 # TODO maybe add these too?
@@ -31,11 +31,11 @@ class Exporter:
         self.per_page = 200
 
     # apparently no json... https://www.goodreads.com/topic/show/1663342-json-endpoints
-    def _get(self, endpoint: str, **kwargs):
+    def _get(self, endpoint: str, **kwargs) -> list[Element]:
         current_page = 1
         total = None
 
-        results = []  # type: ignore[var-annotated]
+        results: list[Element] = []
         while total is None or len(results) < total:
             query = urlencode(
                 [
@@ -84,18 +84,17 @@ class Exporter:
                </export>''')
 
 
-def get_xml(**params):
+def get_xml(**params) -> str:
     return Exporter(**params).export_xml()
 
 
 def make_parser() -> argparse.ArgumentParser:
-    parser = Parser('Export/takeout for your personal Goodreads data')
-    setup_parser(
-        parser,
+    parser = cli.make_parser(
+        description='Export/takeout for your personal Goodreads data',
         params=['user_id', 'key'],
         # TODO not sure if worth automating?
         extra_usage='''
-You can also import ~goodrexport.export~ as a module and call ~get_xml~ function directly to get raw XML.
+You can also import `goodrexport.export` as a module and call `get_xml` function directly to get raw XML.
         ''',
     )
     return parser
@@ -105,11 +104,10 @@ def main() -> None:
     parser = make_parser()
     args = parser.parse_args()
 
-    params = args.params
-    dumper = args.dumper
+    params = cli.get_params(parser, args)
 
     x = get_xml(**params)
-    dumper(x)
+    cli.dump(x, path=args.path)
 
 
 if __name__ == '__main__':

@@ -5,10 +5,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import NamedTuple
 
+import hpikit.cli.dal as cli
+from hpikit.datetime import AwareDateTime, aware
+from hpikit.paths import as_paths
 from lxml import etree as ET
-
-from .exporthelpers import dal_helper
-from .exporthelpers.dal_helper import datetime_aware, pathify, the
+from more_itertools import one
 
 
 class Book(NamedTuple):
@@ -16,9 +17,9 @@ class Book(NamedTuple):
     title: str
     authors: Sequence[str]
     shelves: Sequence[str]
-    date_added: datetime_aware
-    date_started: datetime_aware | None
-    date_read: datetime_aware | None
+    date_added: AwareDateTime
+    date_started: AwareDateTime | None
+    date_read: AwareDateTime | None
 
 
 class Review(NamedTuple):
@@ -26,28 +27,26 @@ class Review(NamedTuple):
     book: Book
 
 
-def _parse_date(s: str | None) -> datetime_aware | None:
+def _parse_date(s: str | None) -> AwareDateTime | None:
     if s is None:
         return None
-    res = datetime.strptime(s, "%a %b %d %H:%M:%S %z %Y")
-    assert res.tzinfo is not None
-    return res
+    return aware(datetime.strptime(s, "%a %b %d %H:%M:%S %z %Y"))
 
 
 def _parse_review(r) -> Review:
-    rid = the(r.xpath('id'))
-    be = the(r.xpath('book'))
-    title = the(be.xpath('title/text()'))
+    rid = one(r.xpath('id'))
+    be = one(r.xpath('book'))
+    title = one(be.xpath('title/text()'))
     authors = be.xpath('authors/author/name/text()')
 
-    bid = the(r.xpath('id/text()'))
-    # isbn_element   = the(book_element.getElementsByTagName('isbn'))
-    # isbn13_element = the(book_element.getElementsByTagName('isbn13'))
-    date_added = the(r.xpath('date_added/text()'))
+    bid = one(r.xpath('id/text()'))
+    # isbn_element   = one(book_element.getElementsByTagName('isbn'))
+    # isbn13_element = one(book_element.getElementsByTagName('isbn13'))
+    date_added = one(r.xpath('date_added/text()'))
     sss = r.xpath('started_at/text()')
     rrr = r.xpath('read_at/text()')
-    started_at = None if len(sss) == 0 else the(sss)
-    read_at = None if len(rrr) == 0 else the(rrr)
+    started_at = None if len(sss) == 0 else one(sss)
+    read_at = None if len(rrr) == 0 else one(rrr)
 
     shelves = [s.attrib['name'] for s in r.xpath('shelves/shelf')]
 
@@ -80,7 +79,7 @@ def _parse_review(r) -> Review:
 
 class DAL:
     def __init__(self, sources: Sequence[Path | str]) -> None:
-        self.sources = list(map(pathify, sources))
+        self.sources = as_paths(sources)
         # TODO take all sources into the account?
         self._source = max(self.sources)
 
@@ -102,7 +101,7 @@ def demo(dal: DAL) -> None:
 
 
 def main() -> None:
-    dal_helper.main(DAL=DAL, demo=demo)
+    cli.main(DAL=DAL, demo=demo)
 
 
 if __name__ == '__main__':
